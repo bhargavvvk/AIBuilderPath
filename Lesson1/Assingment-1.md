@@ -1,6 +1,6 @@
 | Model | Code Quality | SQL Generation | Debugging Ability | HTML/CSS Generation | Ease of Use | Speed/Latency | Comments |
 |---|---|---|---|---|---|---|---|
-| GPT-4o | Excellent | Excellent | Good | | Excellent | Excellent | Good | Best overall balance of reasoning, debugging, frontend generation, and explanations. Very reliable for internship-level coding tasks. |
+| GPT-4o | Excellent | Excellent | Good | Good| Excellent | Excellent | Good | Best overall balance of reasoning, debugging, frontend generation, and explanations. Very reliable for internship-level coding tasks. |
 | Claude Sonnet | Excellent | Excellent |Excellent | Excellent | Excellent | Good | Produces clean and well-structured code with strong explanations. Slightly slower but very readable outputs. |
 | Gemini Flash | Good | Good | Basic | Good | Excellent | Excellent | Extremely fast responses. Good for simple coding tasks, but weaker in debugging and complex reasoning. |
 | Mistral:7B Instruct (Local) | Good | Good | Basic | Basic | Good | Good | Worked correctly for Python and SQL basics. Had noticeable latency before generation. HTML output contained broken Bootstrap CDN links and failed to identify indentation bug correctly. Runs locally and suitable for lightweight experimentation on Mac M2 8GB RAM. |
