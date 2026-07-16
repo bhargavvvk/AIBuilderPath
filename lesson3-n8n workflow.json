@@ -1,0 +1,557 @@
+{
+  "name": "My workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "simple": false,
+        "filters": {},
+        "options": {
+          "downloadAttachments": true
+        }
+      },
+      "type": "n8n-nodes-base.gmailTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        0,
+        -192
+      ],
+      "id": "33652c5e-905f-47c3-8365-f8010f6b0935",
+      "name": "Gmail Trigger",
+      "executeOnce": false,
+      "retryOnFail": true,
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "UXpkkeWUaLW7KfMC",
+          "name": "Gmail OAuth2 API"
+        }
+      },
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "operation": "pdf",
+        "binaryPropertyName": "attachment_0",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        672,
+        -384
+      ],
+      "id": "0f799d25-47ca-4742-a4f3-83bdba2bbaab",
+      "name": "Extract from File"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "c26748a6-b518-4a81-9026-b97899c7a69d",
+              "leftValue": "={{ $json.subject }}",
+              "rightValue": "(requirement|requirements|brd|srs|specification|review|project|feature|pfa|enhancement|proposal|rfp)",
+              "operator": {
+                "type": "string",
+                "operation": "regex"
+              }
+            },
+            {
+              "id": "3647ce33-2b22-4745-8a0c-b6bffac19fbf",
+              "leftValue": "={{ Object.keys($binary ?? {}).length }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            },
+            {
+              "id": "a9963161-0b01-4174-867e-d5d02ee9a87c",
+              "leftValue": "={{ $json.text }}",
+              "rightValue": "(requirement|system|application|feature|module|report|workflow)",
+              "operator": {
+                "type": "string",
+                "operation": "regex"
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "looseTypeValidation": true,
+        "options": {
+          "ignoreCase": true
+        }
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        224,
+        -192
+      ],
+      "id": "86f25e81-9d18-4d9b-8851-8675d4ef4a92",
+      "name": "required email"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        448,
+        -96
+      ],
+      "id": "a94434e6-2a93-4129-93c9-6d5cb133767e",
+      "name": "No Operation, do nothing"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "75af9222-1f5d-45bd-a389-e32030ff5601",
+              "leftValue": "={{ Object.keys($binary ?? {}).length }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        448,
+        -288
+      ],
+      "id": "9aad9db8-b5c0-4a42-8bf4-2a503c210feb",
+      "name": "Document Exists"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const emailText =\n  $('Gmail Trigger').item.json.text || '';\n\nconst extractedText =\n  $json.text || '';\n\nconst requirementContent = `\nEMAIL CONTENT:\n\n${emailText}\n\nDOCUMENT CONTENT:\n\n${extractedText}\n`;\n\nreturn {\n  requirementContent\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        896,
+        -384
+      ],
+      "id": "e5c4deb4-3ddc-4923-ba11-bddc14423860",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const emailText =\n  $('Gmail Trigger').item.json.text || '';\n\nreturn {\n  requirementContent: emailText\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        896,
+        -192
+      ],
+      "id": "ac78d8f2-40ee-4852-a55c-b974ac7f3bf6",
+      "name": "Code in JavaScript1"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are a strict software requirement classifier.\n\nYour task is to determine whether the content below represents a software requirement request.\n\nClassify as REQUIREMENT if it contains:\n- BRD\n- SRS\n- Requirement document\n- Feature request\n- Enhancement request\n- Technical specification\n- Project requirement\n- Review request for software systems\n- Architecture/design review\n\nClassify as NOT_REQUIREMENT if it contains:\n- Newsletters\n- Promotions\n- Marketing emails\n- Personal conversations\n- Receipts\n- Notifications\n- Articles\n- Blogs\n- General information\n\nRules:\n- Do not hallucinate.\n- Do not infer missing information.\n- Use only the provided content.\n- If confidence is below 80%, return NOT_REQUIREMENT.\n\nReturn \n\nREQUIREMENT\n\nor\n\nNOT_REQUIREMENT\n\nContent:\n\n{{ $json.requirementContent }}",
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        1344,
+        -288
+      ],
+      "id": "706e1dd3-d3de-4488-b548-a1ddae4f1451",
+      "name": "Basic LLM Chain",
+      "alwaysOutputData": false
+    },
+    {
+      "parameters": {
+        "model": "qwen/qwen3-8b",
+        "options": {
+          "temperature": 0
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        1424,
+        -64
+      ],
+      "id": "78b66960-2bc1-4735-88c3-16a0d7a7809a",
+      "name": "OpenRouter Chat Model",
+      "credentials": {
+        "openRouterApi": {
+          "id": "NYKSM5qCs7yWuXdE",
+          "name": "OpenRouter account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "8a62cb91-aa70-4fdc-91a7-e3de5d594bee",
+              "leftValue": "={{ $json.text }}",
+              "rightValue": "REQUIREMENT",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1696,
+        -288
+      ],
+      "id": "58dff7a8-a184-4694-a63a-5fbdaff1f67b",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "operation": "reply",
+        "messageId": "={{$node[\"Gmail Trigger\"].json.id}}",
+        "message": "=<h2>{{$json.subject}}</h2>\n\n<p>Hello Team,</p>\n\n<p>Please find the requirement analysis below.</p>\n\n<h3>Functional Requirements</h3>\n<ul>\n{{ $json.functionalRequirements.map(x => `<li>${x}</li>`).join('') }}\n</ul>\n\n<h3>Non-Functional Requirements</h3>\n<ul>\n{{ $json.nonFunctionalRequirements.map(x => `<li>${x}</li>`).join('') }}\n</ul>\n\n<h3>Risks</h3>\n<ul>\n{{ $json.risks.map(x => `<li>${x}</li>`).join('') }}\n</ul>\n\n<h3>Assumptions</h3>\n<ul>\n{{ $json.assumptions.map(x => `<li>${x}</li>`).join('') }}\n</ul>\n\n<h3>Questions to Client</h3>\n<ul>\n{{ $json.questions.map(x => `<li>${x}</li>`).join('') }}\n</ul>\n\n<br>\n\n<p>\nRegards,<br>\nRequirement Analysis Bot\n</p>",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        2496,
+        -384
+      ],
+      "id": "61eefb7c-f7fb-4144-a4b5-4db82c91a001",
+      "name": "Reply to a message",
+      "webhookId": "078c5e52-b0fc-4318-9181-ef899ec902ba",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "UXpkkeWUaLW7KfMC",
+          "name": "Gmail OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        2720,
+        -384
+      ],
+      "id": "94be0ea1-64a6-4d41-85d3-4d4a17fa16ec",
+      "name": "No Operation, do nothing1"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4.1-mini",
+          "mode": "list",
+          "cachedResultName": "GPT-4.1-MINI"
+        },
+        "responses": {
+          "values": [
+            {
+              "content": "= You are a Senior Business Analyst.\n\nAnalyze the requirement document and generate the following sections:\n\n1. Functional Requirements\n2. Non-Functional Requirements\n3. Risks\n4. Assumptions\n5. Questions to Client\n\nRules:\n- Use only information explicitly present in the document.\n- Do not invent requirements.\n- If no non-functional requirements are specified, state \"Not Specified\".\n- If risks are unclear, infer only reasonable project risks.\n- Questions should focus on missing information required for implementation.\n- Format the output professionally using clear headings and bullet points.\nReturn in this exact structure:\n\n{\n  \"subject\": \"\",\n  \"functionalRequirements\": [],\n  \"nonFunctionalRequirements\": [],\n  \"risks\": [],\n  \"assumptions\": [],\n  \"questions\": []\n}\nRequirement Document:\n{{ $('Edit Fields').item.json.requirementContent }}"
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {
+          "temperature": 0.4
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.3,
+      "position": [
+        1920,
+        -384
+      ],
+      "id": "93b82d61-3c9f-43d9-917a-968720332843",
+      "name": "Message a model",
+      "alwaysOutputData": false,
+      "executeOnce": false,
+      "credentials": {
+        "openAiApi": {
+          "id": "JRlcuvY4iUxUUhj5",
+          "name": "n8n free OpenAI API credits"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const rawJson = $json.output[0].content[0].text;\n\nconst data = JSON.parse(rawJson);\n\nreturn {\n  json: data\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2272,
+        -384
+      ],
+      "id": "728cb12c-363b-407b-8e39-38d1cd3571b2",
+      "name": "Code in JavaScript2"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "7a05f9ce-4426-4da7-8060-fcbd4dbcecfd",
+              "name": "requirementContent",
+              "value": "={{ $json.requirementContent }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1120,
+        -288
+      ],
+      "id": "4f16c1c1-04cd-424f-a1cf-04242d7283e8",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        1984,
+        -192
+      ],
+      "id": "8a9ed85d-a816-40e7-9f9f-c3d3232d4903",
+      "name": "No Operation, do nothing2"
+    }
+  ],
+  "connections": {
+    "Gmail Trigger": {
+      "main": [
+        [
+          {
+            "node": "required email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "required email": {
+      "main": [
+        [
+          {
+            "node": "Document Exists",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No Operation, do nothing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Document Exists": {
+      "main": [
+        [
+          {
+            "node": "Extract from File",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from File": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Message a model",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No Operation, do nothing2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Reply to a message": {
+      "main": [
+        [
+          {
+            "node": "No Operation, do nothing1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message a model": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript2": {
+      "main": [
+        [
+          {
+            "node": "Reply to a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "staticData": {
+    "node:Gmail Trigger": {
+      "Gmail Trigger": {
+        "lastTimeChecked": 1782896988,
+        "possibleDuplicates": [
+          "19f1cf115d20093a"
+        ]
+      }
+    }
+  },
+  "pinData": {},
+  "triggerCount": 1,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  }
+}
